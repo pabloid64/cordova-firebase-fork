@@ -16,6 +16,8 @@ import android.app.Notification;
 import android.text.TextUtils;
 import android.content.ContentResolver;
 import android.graphics.Color;
+import android.text.Html;
+import android.text.Spanned;
 
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import com.google.firebase.messaging.FirebaseMessagingService;
@@ -89,6 +91,7 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
             String messageType;
             String title = null;
             String body = null;
+            String bodyHtml = null;
             String id = null;
             String sound = null;
             String vibrate = null;
@@ -128,6 +131,7 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
                 }
                 if(data.containsKey("notification_title")) title = data.get("notification_title");
                 if(data.containsKey("notification_body")) body = data.get("notification_body");
+                if(data.containsKey("notification_android_body_html")) bodyHtml = data.get("notification_android_body_html");
                 if(data.containsKey("notification_android_channel_id")) channelId = data.get("notification_android_channel_id");
                 if(data.containsKey("notification_android_id")) id = data.get("notification_android_id");
                 if(data.containsKey("notification_android_sound")) sound = data.get("notification_android_sound");
@@ -161,14 +165,14 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
 
             if (!TextUtils.isEmpty(body) || !TextUtils.isEmpty(title) || (data != null && !data.isEmpty())) {
                 boolean showNotification = (FirebasePlugin.inBackground() || !FirebasePlugin.hasNotificationsCallback() || foregroundNotification) && (!TextUtils.isEmpty(body) || !TextUtils.isEmpty(title));
-                sendMessage(remoteMessage, data, messageType, id, title, body, showNotification, sound, vibrate, light, color, icon, channelId, priority, visibility);
+                sendMessage(remoteMessage, data, messageType, id, title, body, bodyHtml, showNotification, sound, vibrate, light, color, icon, channelId, priority, visibility);
             }
         }catch (Exception e){
             FirebasePlugin.handleExceptionWithoutContext(e);
         }
     }
 
-    private void sendMessage(RemoteMessage remoteMessage, Map<String, String> data, String messageType, String id, String title, String body, boolean showNotification, String sound, String vibrate, String light, String color, String icon, String channelId, String priority, String visibility) {
+    private void sendMessage(RemoteMessage remoteMessage, Map<String, String> data, String messageType, String id, String title, String body, String bodyHtml, boolean showNotification, String sound, String vibrate, String light, String color, String icon, String channelId, String priority, String visibility) {
         Log.d(TAG, "sendMessage(): messageType="+messageType+"; showNotification="+showNotification+"; id="+id+"; title="+title+"; body="+body+"; sound="+sound+"; vibrate="+vibrate+"; light="+light+"; color="+color+"; icon="+icon+"; channel="+channelId+"; data="+data.toString());
         Bundle bundle = new Bundle();
         for (String key : data.keySet()) {
@@ -178,6 +182,7 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
         this.putKVInBundle("id", id, bundle);
         this.putKVInBundle("title", title, bundle);
         this.putKVInBundle("body", body, bundle);
+        this.putKVInBundle("body_html", bodyHtml, bundle);
         this.putKVInBundle("sound", sound, bundle);
         this.putKVInBundle("vibrate", vibrate, bundle);
         this.putKVInBundle("light", light, bundle);
@@ -208,10 +213,20 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
             NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, channelId);
             notificationBuilder
                     .setContentTitle(title)
-                    .setContentText(body)
-                    .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
+                    // .setContentText(body)
+                    // .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
                     .setAutoCancel(true)
                     .setContentIntent(pendingIntent);
+
+            if(bodyHtml != null) {
+                notificationBuilder
+                    .setContentText(fromHtml(body))
+                    .setStyle(new NotificationCompat.BigTextStyle().bigText(fromHtml(body)));
+            }else{
+                notificationBuilder
+                    .setContentText(body)
+                    .setStyle(new NotificationCompat.BigTextStyle().bigText(body));
+            }
 
             // On Android O+ the sound/lights/vibration are determined by the channel ID
             if(Build.VERSION.SDK_INT < Build.VERSION_CODES.O){
@@ -344,5 +359,12 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
         if(v != null && !b.containsKey(k)){
             b.putString(k, v);
         }
+    }
+
+    private Spanned fromHtml(String source) {
+        if (source != null)
+            return Html.fromHtml(source);
+        else
+            return null;
     }
 }
