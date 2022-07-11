@@ -1,7 +1,7 @@
 cordova-plugin-firebasex [![Latest Stable Version](https://img.shields.io/npm/v/cordova-plugin-firebasex.svg)](https://www.npmjs.com/package/cordova-plugin-firebasex) [![Total Downloads](https://img.shields.io/npm/dt/cordova-plugin-firebasex.svg)](https://npm-stat.com/charts.html?package=cordova-plugin-firebasex)
 ========================
 
-The repository is a fork of the cordova-firebase-plugin.
+**IMPORTANT:** The repository is a fork of the cordova-firebase-plugin version 11.0.3.
 
 Brings push notifications, analytics, event tracking, crash reporting and more from Google Firebase to your Cordova project.
 
